@@ -1,0 +1,26 @@
+<div class="form">
+ <h2>Reply to this post</h2>
+ <form method="post" action="backend.php">
+  <input type="hidden" name="op" value="pluginhandler"/>
+  <input type="hidden" name="plugin" value="micropub"/>
+  <input type="hidden" name="method" value="action"/>
+  <input type="hidden" name="mode"   value="post"/>
+
+  <input type="hidden" name="replyTo" value="<?= htmlspecialchars($article['link']) ?>"/>
+  <label for="micropub-me">Identity:</label>
+  <select id="micropub-me" name="me" size="1">
+   <?php foreach ($accounts as $url) { ?>
+    <option value="<?= htmlspecialchars($url) ?>"><?= htmlspecialchars($url) ?></option>
+   <?php } ?>
+  </select><br/>
+  <textarea name="content" rows="4" cols="60"></textarea><br/>
+  <button type="submit">Post comment</button>
+ </form>
+</div>
+
+<div class="reply" style="text-align: right">
+ or 
+ <a href="<?= htmlspecialchars($quillUrl) ?>" class="mpbutton dijitButton" target="_blank">
+  Reply with Quill
+ </a>
+</div>

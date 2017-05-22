@@ -1,0 +1,30 @@
+<div dojoType="dijit.layout.AccordionPane" title="Micropub">
+ <div>
+  <h1>Existing identities</h1>
+  <table border="1">
+   <thead>
+    <tr><th>Identity URL</th></tr>
+   </thead>
+   <tbody>
+    <?php foreach ($accounts as $accurl => $account) { ?>
+     <tr>
+      <td><?= $accurl ?></td>
+     </tr>
+    <?php } ?>
+   </tbody>
+  </table>
+ </div>
+
+ <div>
+  <h1>Add new identity</h1>
+  <form method="post" action="backend.php">
+   <input type="hidden" name="op" value="pluginhandler"/>
+   <input type="hidden" name="plugin" value="micropub"/>
+   <input type="hidden" name="method" value="action"/>
+   <input type="hidden" name="mode"   value="authorize"/>
+
+   <input name="url" type="url" size="40"/>
+   <button type="submit">Authorize</button>
+  </form>
+ </div>
+</div>
