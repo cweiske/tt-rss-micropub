@@ -87,7 +87,6 @@ class Micropub extends Plugin implements IHandler
         if (!count($accounts)) {
             return $article;
         }
-        array_shift($accounts);
         ob_start();
         include __DIR__ . '/commentform.phtml';
         $html = ob_get_clean();
@@ -239,6 +238,7 @@ class Micropub extends Plugin implements IHandler
             [
                 'code'     => intval($code),
                 'location' => $location,
+                'message'  => 'Post created',
             ]
         );
         exit();

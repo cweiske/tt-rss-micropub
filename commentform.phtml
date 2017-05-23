@@ -1,32 +1,63 @@
-<div class="form">
- <h2>Reply to this post</h2>
- <form method="post" action="backend.php">
-  <input type="hidden" name="op" value="pluginhandler"/>
-  <input type="hidden" name="plugin" value="micropub"/>
-  <input type="hidden" name="method" value="action"/>
-  <input type="hidden" name="mode"   value="post"/>
+<h2>Reply to this post</h2>
+<div class="postReply" id="postReply">
+ <form method="post" action="backend.php" id="postReplyForm"
+       dojoType="dijit.form.Form">
+  <script type="dojo/method" event="onSubmit" args="evt">
+  evt.preventDefault();
+  if (this.validate()) {
+      notify_progress('Sending reply...', true);
 
-  <input type="hidden" name="replyTo" value="<?= htmlspecialchars($article['link']) ?>"/>
+      new Ajax.Request('backend.php', {
+          parameters: dojo.objectToQuery(this.getValues()),
+	  onSuccess: function(transport) {
+              notify_info(transport.responseJSON.message);
+              $('postReplyUrl').writeAttribute(
+                  'href', transport.responseJSON.location
+              );
+              $('postReplyUrl').innerHTML = transport.responseJSON.location;
+              //Effect.Shrink('postReply');
+              //Effect.Grow('postReplySuccess');
+              $('postReply').hide();
+              $('postReplySuccess').show();
+	  },
+          onFailure: function(transport) {
+              notify_error(transport.responseText);
+          }
+      });
+  }
+  </script>
+
+  <?php print_hidden('op', 'pluginhandler'); ?>
+  <?php print_hidden('plugin', 'micropub'); ?>
+  <?php print_hidden('method', 'action'); ?>
+  <?php print_hidden('mode', 'post'); ?>
+
+  <?php print_hidden('replyTo', htmlspecialchars($article['link'])); ?>
 
   <?php if (count($accounts) == 1) { ?>
-   <input type="hidden" name="me" value="<?= htmlspecialchars(reset($accounts)) ?>"/>
+   <?php print_hidden('me', htmlspecialchars(reset($accounts))); ?>
   <?php } else { ?>
    <label for="micropub-me">Identity:</label>
-   <select id="micropub-me" name="me" size="1">
-    <?php foreach ($accounts as $url) { ?>
-     <option value="<?= htmlspecialchars($url) ?>"><?= htmlspecialchars($url) ?></option>
-    <?php } ?>
-   </select><br/>
+   <?php print_select('micropub-me', null, $accounts,
+     'dojoType="dijit.form.Select" size="1"', 'me'); ?>
+   <br/>
   <?php } ?>
 
-  <textarea name="content" rows="4" cols="60" width="100%" class="dijitTextArea"></textarea><br/>
+  <textarea name="content" rows="4" cols="60"
+            style="width:95%; height: auto"
+            dojoType="dijit.form.SimpleTextarea"
+   ></textarea><br/>
   <button type="submit">Post comment</button>
  </form>
+
+ <div class="reply" style="text-align: right">
+  or
+  <a href="<?= htmlspecialchars($quillUrl) ?>" class="mpbutton dijitButton" target="_blank">
+   Reply with Quill
+  </a>
+ </div>
 </div>
 
-<div class="reply" style="text-align: right">
- or 
- <a href="<?= htmlspecialchars($quillUrl) ?>" class="mpbutton dijitButton" target="_blank">
-  Reply with Quill
- </a>
+<div id="postReplySuccess" class="alert alert-success" style="display:none">
+ Post created at <a id="postReplyUrl" href="#"></a>.
 </div>
