@@ -55,11 +55,6 @@ class Micropub extends Plugin implements IHandler
         );
     }
 
-    function get_css()
-    {
-        return file_get_contents(__DIR__ . '/init.css');
-    }
-
     /**
      * @param array $article Article data. Keys:
      *                       - id
@@ -89,7 +84,10 @@ class Micropub extends Plugin implements IHandler
         // did I tell you I hate dojo/dijit?
 
         $accounts = array_keys(PluginHost::getInstance()->get($this, 'accounts', []));
-
+        if (!count($accounts)) {
+            return $article;
+        }
+        array_shift($accounts);
         ob_start();
         include __DIR__ . '/commentform.phtml';
         $html = ob_get_clean();
@@ -114,6 +112,7 @@ class Micropub extends Plugin implements IHandler
 
         $accounts = PluginHost::getInstance()->get($this, 'accounts', []);
 
+        //FIXME: default identity
         include __DIR__ . '/settings.phtml';
     }
 
@@ -130,6 +129,12 @@ class Micropub extends Plugin implements IHandler
         return $this->action($mode, $args);
     }
 
+    /**
+     * HTTP command.
+     * Also used by micropub() cli command method.
+     *
+     * /backend.php?op=pluginhandler&plugin=micropub&method=action
+     */
     public function action($mode = null, $args = [])
     {
         if (isset($_POST['mode'])) {
@@ -145,7 +150,7 @@ class Micropub extends Plugin implements IHandler
         } else if ($mode == 'post') {
             return $this->postAction();
         } else {
-            $this->errorOut('Unsupported mode');
+            return $this->errorOut('Unsupported mode');
         }
     }
 
@@ -180,14 +185,13 @@ class Micropub extends Plugin implements IHandler
             return $this->errorOut('No micropub endpoint found');
         }
 
-        $res = fetch_file_contents(
-            [
-                //FIXME: add content-type header once this is fixed:
-                // https://discourse.tt-rss.org/t//207
-                'url'        => $links['micropub'],
-                //we use http_build_query to force cURL
-                // to use x-www-form-urlencoded
-                'post_query' => http_build_query(
+        /* unfortunately fetch_file_contents() does not return headers
+           so we have to bring our own way to POST data */
+        $opts = [
+            'http' => [
+                'method'  => 'POST',
+                'header'  => 'Content-type: application/x-www-form-urlencoded',
+                'content' => http_build_query(
                     [
                         'access_token' => $account['access_token'],
                         'h'            => 'entry',
@@ -195,20 +199,49 @@ class Micropub extends Plugin implements IHandler
                         'content'      => $content,
                     ]
                 ),
-                'followlocation' => false,
+                'ignore_errors' => true,
             ]
+        ];
+        $stream = fopen(
+            $links['micropub'], 'r', false,
+            stream_context_create($opts)
         );
+        $meta    = stream_get_meta_data($stream);
+        $headers = $meta['wrapper_data'];
+        $content = stream_get_contents($stream);
 
-        if ($GLOBALS['fetch_last_error_code'] == 201) {
-            //FIXME: extract location header
-            echo "OK, comment post created\n";
-        } else {
-            $this->errorOut(
+        //we hope there were no redirects and this is actually the only
+        // HTTP line in the headers
+        $status = array_shift($headers);
+        list($httpver, $code, $text) = explode(' ', $status, 3);
+        if ($code != 201 && $code != 202) {
+            return $this->errorOut(
                 'An error occured: '
-                . $GLOBALS['fetch_last_error_code']
-                . ' ' . $GLOBALS['fetch_last_error_code_content']
+                . $code . ' ' . $text
             );
         }
+
+        $location = null;
+        foreach ($headers as $header) {
+            $parts = explode(':', $header, 2);
+            if (count($parts) == 2 && strtolower($parts[0]) == 'location') {
+                $location = trim($parts[1]);
+            }
+        }
+        if ($location === null) {
+            return $this->errorOut(
+                'Location header missing in successful creation response.'
+            );
+        }
+
+        header('Content-type: application/json');
+        echo json_encode(
+            [
+                'code'     => intval($code),
+                'location' => $location,
+            ]
+        );
+        exit();
     }
 
     protected function authorizeAction($args = [])
@@ -316,12 +349,39 @@ class Micropub extends Plugin implements IHandler
         header('Location: prefs.php');
     }
 
+    /**
+     * Send an error message.
+     * Automatically in the correct format (plain text or json)
+     *
+     * @param string $msg Error message
+     *
+     * @return void
+     */
     protected function errorOut($msg)
     {
-        echo $msg . "\n";
+        header('HTTP/1.0 400 Bad Request');
+
+        //this does not take "q"uality values into account, I know.
+        if (isset($_SERVER['HTTP_ACCEPT'])
+            && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false
+        ) {
+            //send json error
+            header('Content-type: application/json');
+            echo json_encode(
+                [
+                    'error' => $msg,
+                ]
+            );
+        } else {
+            header('Content-type: text/plain');
+            echo $msg . "\n";
+        }
         exit(1);
     }
 
+    /**
+     * Extract link relations from a given URL
+     */
     protected function getLinks($url)
     {
         //FIXME: HTTP Link header support with HTTP2

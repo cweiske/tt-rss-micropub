@@ -7,13 +7,19 @@
   <input type="hidden" name="mode"   value="post"/>
 
   <input type="hidden" name="replyTo" value="<?= htmlspecialchars($article['link']) ?>"/>
-  <label for="micropub-me">Identity:</label>
-  <select id="micropub-me" name="me" size="1">
-   <?php foreach ($accounts as $url) { ?>
-    <option value="<?= htmlspecialchars($url) ?>"><?= htmlspecialchars($url) ?></option>
-   <?php } ?>
-  </select><br/>
-  <textarea name="content" rows="4" cols="60"></textarea><br/>
+
+  <?php if (count($accounts) == 1) { ?>
+   <input type="hidden" name="me" value="<?= htmlspecialchars(reset($accounts)) ?>"/>
+  <?php } else { ?>
+   <label for="micropub-me">Identity:</label>
+   <select id="micropub-me" name="me" size="1">
+    <?php foreach ($accounts as $url) { ?>
+     <option value="<?= htmlspecialchars($url) ?>"><?= htmlspecialchars($url) ?></option>
+    <?php } ?>
+   </select><br/>
+  <?php } ?>
+
+  <textarea name="content" rows="4" cols="60" width="100%" class="dijitTextArea"></textarea><br/>
   <button type="submit">Post comment</button>
  </form>
 </div>
