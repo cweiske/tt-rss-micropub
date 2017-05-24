@@ -40,12 +40,12 @@ class Micropub extends Plugin implements IHandler
         return 2;
     }
 
+
     /**
      * Register our hooks
      */
     public function init(/*PluginHost*/ $host)
     {
-        parent::init($host);
         static::$myhost = $host;
         $host->add_hook($host::HOOK_PREFS_TAB, $this);
         $host->add_hook($host::HOOK_RENDER_ARTICLE, $this);
