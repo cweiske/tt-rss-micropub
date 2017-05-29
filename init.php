@@ -110,9 +110,21 @@ class Micropub extends Plugin implements IHandler
         }
 
         $accounts = PluginHost::getInstance()->get($this, 'accounts', []);
+        if (isset($_REQUEST['accordion'])
+            && $_REQUEST['accordion'] == 'micropub'
+        ) {
+            $accordionActive = 'selected="true"';
+        } else {
+            $accordionActive = '';
+        }
 
         //FIXME: default identity
         include __DIR__ . '/settings.phtml';
+    }
+
+    public function get_prefs_js()
+    {
+        return file_get_contents(__DIR__ . '/settings.js');
     }
 
     /**
@@ -148,6 +160,8 @@ class Micropub extends Plugin implements IHandler
             return $this->authreturnAction();
         } else if ($mode == 'post') {
             return $this->postAction();
+        } else if ($mode == 'deleteIdentity') {
+            return $this->deleteIdentityAction();
         } else {
             return $this->errorOut('Unsupported mode');
         }
@@ -158,17 +172,17 @@ class Micropub extends Plugin implements IHandler
         if (!isset($_POST['me'])) {
             return $this->errorOut('"me" parameter missing');
         }
-        $me = $_POST['me'];
+        $me = trim($_POST['me']);
 
         if (!isset($_POST['replyTo'])) {
             return $this->errorOut('"replyTo" parameter missing');
         }
-        $replyTo = $_POST['replyTo'];
+        $replyTo = trim($_POST['replyTo']);
 
         if (!isset($_POST['content'])) {
             return $this->errorOut('"content" parameter missing');
         }
-        $content = $_POST['content'];
+        $content = trim($_POST['content']);
 
         $accounts = PluginHost::getInstance()->get($this, 'accounts', []);
         if (!isset($accounts[$me])) {
@@ -346,7 +360,39 @@ class Micropub extends Plugin implements IHandler
         $host->set($this, 'accounts', $accounts);
 
         //all fine now.
-        header('Location: prefs.php');
+        //the accordion parameter will never work
+        // because fox has serious mental problems
+        // https://discourse.tt-rss.org/t/open-a-certain-accordion-in-preferences-by-url-parameter/234
+        header('Location: prefs.php?accordion=micropub');
+    }
+
+    /**
+     * Backend preferences action: Remove a given account
+     */
+    protected function deleteIdentityAction()
+    {
+        if (!isset($_POST['me'])) {
+            return $this->errorOut('"me" parameter missing');
+        }
+        $me = trim($_POST['me']);
+
+        $host = PluginHost::getInstance();
+        $accounts = $host->get($this, 'accounts', []);
+        if (!isset($accounts[$me])) {
+            return $this->errorOut('Unknown identity');
+        }
+
+        unset($accounts[$me]);
+        $host->set($this, 'accounts', $accounts);
+        header('Content-type: application/json');
+
+        echo json_encode(
+            [
+                'code'     => '200',
+                'message'  => 'Identity removed',
+            ]
+        );
+        exit();
     }
 
     /**
