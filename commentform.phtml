@@ -9,7 +9,7 @@
 
       new Ajax.Request('backend.php', {
           parameters: dojo.objectToQuery(this.getValues()),
-	  onSuccess: function(transport) {
+          onSuccess: function(transport) {
               notify_info(transport.responseJSON.message);
               $('postReplyUrl').writeAttribute(
                   'href', transport.responseJSON.location
@@ -19,7 +19,7 @@
               //Effect.Grow('postReplySuccess');
               $('postReply').hide();
               $('postReplySuccess').show();
-	  },
+          },
           onFailure: function(transport) {
               notify_error(transport.responseText);
           }
