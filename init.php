@@ -375,6 +375,7 @@ class Micropub extends Plugin implements IHandler
             'access_token' => $data['access_token'],
             'scope'        => $data['scope'],
         ];
+        $accounts = $this->fixDefaultIdentity($accounts);
         $host->set($this, 'accounts', $accounts);
 
         //all fine now.
@@ -401,9 +402,10 @@ class Micropub extends Plugin implements IHandler
         }
 
         unset($accounts[$me]);
+        $accounts = $this->fixDefaultIdentity($accounts);
         $host->set($this, 'accounts', $accounts);
-        header('Content-type: application/json');
 
+        header('Content-type: application/json');
         echo json_encode(
             [
                 'code'     => '200',
@@ -428,13 +430,12 @@ class Micropub extends Plugin implements IHandler
         if (!isset($accounts[$me])) {
             return $this->errorOut('Unknown identity');
         }
-
         foreach ($accounts as $url => $data) {
             $accounts[$url]['default'] = ($url == $me);
         }
         $host->set($this, 'accounts', $accounts);
-        header('Content-type: application/json');
 
+        header('Content-type: application/json');
         echo json_encode(
             [
                 'code'     => '200',
@@ -442,6 +443,33 @@ class Micropub extends Plugin implements IHandler
             ]
         );
         exit();
+    }
+
+    /**
+     * Set the default identity if there is none
+     *
+     * @param array $accounts Array of account data arrays
+     *
+     * @return array Array of account data arrays
+     */
+    protected function fixDefaultIdentity($accounts)
+    {
+        if (!count($accounts)) {
+            return $accounts;
+        }
+
+        $hasDefault = false;
+        foreach ($accounts as $account) {
+            if ($account['default']) {
+                $hasDefault = true;
+            }
+        }
+
+        if (!$hasDefault) {
+            reset($accounts);
+            $accounts[key($accounts)]['default'] = true;
+        }
+        return $accounts;
     }
 
     /**
@@ -504,9 +532,27 @@ class Micropub extends Plugin implements IHandler
         return $links;
     }
 
+    /**
+     * If a valid CSRF token is necessary or not
+     *
+     * @param string $method Plugin method name (here: "action")
+     *
+     * @return boolean True if an invalid CSRF token shall be ignored
+     */
     function csrf_ignore($method)
     {
-        return true;
+        $mode = null;
+        if (isset($_POST['mode'])) {
+            $mode = $_POST['mode'];
+        } else if (isset($_GET['mode'])) {
+            $mode = $_GET['mode'];
+        }
+
+        if ($mode == 'authreturn') {
+            return true;
+        }
+
+        return false;
     }
 
     /**
