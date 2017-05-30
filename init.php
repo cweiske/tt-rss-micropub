@@ -272,9 +272,18 @@ class Micropub extends Plugin implements IHandler
         $status = array_shift($headers);
         list($httpver, $code, $text) = explode(' ', $status, 3);
         if ($code != 201 && $code != 202) {
+            $errData = json_decode($content);
+            if (isset($errData->error_description)
+                && $errData->error_description != ''
+            ) {
+                return $this->errorOut(
+                    'Error creating post: '
+                    . $errData->error_description
+                );
+            }
             return $this->errorOut(
-                'An error occured: '
-                . $code . ' ' . $text
+                'Error creating post: '
+                . $code . ' ' . $text.$content
             );
         }
 
