@@ -185,28 +185,44 @@ class Micropub extends Plugin implements IHandler
         }
     }
 
+    /**
+     * Post a comment, like or bookmark via micropub
+     */
     protected function postAction()
     {
+        $action = 'comment';
+        if (isset($_POST['action'])) {
+            $action = trim($_POST['action']);
+        }
+        if (array_search($action, ['bookmark', 'comment', 'like']) === false) {
+            return $this->errorOut('"action" parameter invalid');
+        }
+
         if (!isset($_POST['me'])) {
             return $this->errorOut('"me" parameter missing');
         }
         $me = trim($_POST['me']);
-
-        if (!isset($_POST['replyTo'])) {
-            return $this->errorOut('"replyTo" parameter missing');
-        }
-        $replyTo = trim($_POST['replyTo']);
-
-        if (!isset($_POST['content'])) {
-            return $this->errorOut('"content" parameter missing');
-        }
-        $content = trim($_POST['content']);
-
         $accounts = PluginHost::getInstance()->get($this, 'accounts', []);
         if (!isset($accounts[$me])) {
             return $this->errorOut('"me" parameter invalid');
         }
         $account = $accounts[$me];
+
+        if (!isset($_POST['postUrl'])) {
+            return $this->errorOut('"postUrl" parameter missing');
+        }
+        $postUrl = trim($_POST['postUrl']);
+
+        if ($action == 'comment') {
+            if (!isset($_POST['content'])) {
+                return $this->errorOut('"content" parameter missing');
+            }
+            $content = trim($_POST['content']);
+            if (!strlen($_POST['content'])) {
+                return $this->errorOut('"content" is empty');
+            }
+        }
+
 
         $links = $this->getLinks($me);
         if (!count($links)) {
@@ -216,20 +232,30 @@ class Micropub extends Plugin implements IHandler
             return $this->errorOut('No micropub endpoint found');
         }
 
+        $parameters = [
+            'access_token' => $account['access_token'],
+            'h'            => 'entry',
+        ];
+
+        if ($action == 'bookmark') {
+            $parameters['bookmark-of'] = $postUrl;
+
+        } else if ($action == 'comment') {
+            $parameters['in-reply-to'] = $postUrl;
+            $parameters['content']     = $content;
+
+        } else if ($action == 'like') {
+            $parameters['like-of'] = $postUrl;
+        }
+
+
         /* unfortunately fetch_file_contents() does not return headers
            so we have to bring our own way to POST data */
         $opts = [
             'http' => [
                 'method'  => 'POST',
                 'header'  => 'Content-type: application/x-www-form-urlencoded',
-                'content' => http_build_query(
-                    [
-                        'access_token' => $account['access_token'],
-                        'h'            => 'entry',
-                        'in-reply-to'  => $replyTo,
-                        'content'      => $content,
-                    ]
-                ),
+                'content' => http_build_query($parameters),
                 'ignore_errors' => true,
             ]
         ];

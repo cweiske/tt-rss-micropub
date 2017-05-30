@@ -31,8 +31,24 @@
   <?php print_hidden('plugin', 'micropub'); ?>
   <?php print_hidden('method', 'action'); ?>
   <?php print_hidden('mode', 'post'); ?>
+  <input name="action" value="" id="mpaction"
+         dojoType="dijit.form.TextBox" style="display: none"/>
 
-  <?php print_hidden('replyTo', htmlspecialchars($article['link'])); ?>
+  <?php print_hidden('postUrl', htmlspecialchars($article['link'])); ?>
+
+  <div style="text-align: right">
+   <button type="submit" name="action"
+     onclick="dijit.byId('mpaction').set('value',this.value);"
+     value="bookmark">🔖 Bookmark</button>
+   <button type="submit" name="action"
+     onclick="dijit.byId('mpaction').set('value',this.value);"
+     value="like">♥ Like</button>
+  </div>
+
+  <textarea name="content" rows="4" cols="60"
+            style="box-sizing: border-box; width:100%; height: auto"
+            dojoType="dijit.form.SimpleTextarea"
+   ></textarea><br/>
 
   <?php if (count($accounts) == 1) { ?>
    <?php print_hidden('me', htmlspecialchars(reset($accounts))); ?>
@@ -43,11 +59,9 @@
    <br/>
   <?php } ?>
 
-  <textarea name="content" rows="4" cols="60"
-            style="width:95%; height: auto"
-            dojoType="dijit.form.SimpleTextarea"
-   ></textarea><br/>
-  <button type="submit">Post comment</button>
+  <button type="submit" name="action"
+    onclick="dijit.byId('mpaction').set('value',this.value);"
+    value="comment">Post comment</button>
  </form>
 
  <div class="reply" style="text-align: right">
