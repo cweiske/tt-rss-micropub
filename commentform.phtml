@@ -51,7 +51,7 @@
    ></textarea><br/>
 
   <?php if (count($accounts) == 1) { ?>
-   <?php print_hidden('me', htmlspecialchars(reset($accounts))); ?>
+   <?php print_hidden('me', htmlspecialchars(reset($accountUrls))); ?>
   <?php } else { ?>
    <label for="micropub-me">Identity:</label>
    <?php print_select('micropub-me', $defaultAccount, $accountUrls,
