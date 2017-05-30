@@ -83,10 +83,19 @@ class Micropub extends Plugin implements IHandler
             . '?reply=' . urlencode($article['link']);
         // did I tell you I hate dojo/dijit?
 
-        $accounts = array_keys(PluginHost::getInstance()->get($this, 'accounts', []));
+        $accounts = PluginHost::getInstance()->get($this, 'accounts', []);
         if (!count($accounts)) {
             return $article;
         }
+
+        $accountUrls = array_keys($accounts);
+        $defaultAccount = null;
+        foreach ($accounts as $url => $account) {
+            if ($account['default']) {
+                $defaultAccount = $url;
+            }
+        }
+
         ob_start();
         include __DIR__ . '/commentform.phtml';
         $html = ob_get_clean();
@@ -116,6 +125,13 @@ class Micropub extends Plugin implements IHandler
             $accordionActive = 'selected="true"';
         } else {
             $accordionActive = '';
+        }
+
+        foreach ($accounts as $url => $account) {
+            $accounts[$url]['checked'] = '';
+            if ($account['default']) {
+                $accounts[$url]['checked'] = 'checked="checked"';
+            }
         }
 
         //FIXME: default identity
@@ -162,6 +178,8 @@ class Micropub extends Plugin implements IHandler
             return $this->postAction();
         } else if ($mode == 'deleteIdentity') {
             return $this->deleteIdentityAction();
+        } else if ($mode == 'setDefaultIdentity') {
+            return $this->setDefaultIdentityAction();
         } else {
             return $this->errorOut('Unsupported mode');
         }
@@ -390,6 +408,37 @@ class Micropub extends Plugin implements IHandler
             [
                 'code'     => '200',
                 'message'  => 'Identity removed',
+            ]
+        );
+        exit();
+    }
+
+    /**
+     * Backend preferences action: Make a given account the default
+     */
+    protected function setDefaultIdentityAction()
+    {
+        if (!isset($_POST['me'])) {
+            return $this->errorOut('"me" parameter missing');
+        }
+        $me = trim($_POST['me']);
+
+        $host = PluginHost::getInstance();
+        $accounts = $host->get($this, 'accounts', []);
+        if (!isset($accounts[$me])) {
+            return $this->errorOut('Unknown identity');
+        }
+
+        foreach ($accounts as $url => $data) {
+            $accounts[$url]['default'] = ($url == $me);
+        }
+        $host->set($this, 'accounts', $accounts);
+        header('Content-type: application/json');
+
+        echo json_encode(
+            [
+                'code'     => '200',
+                'message'  => 'Default account set',
             ]
         );
         exit();

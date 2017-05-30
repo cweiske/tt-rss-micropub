@@ -38,7 +38,7 @@
    <?php print_hidden('me', htmlspecialchars(reset($accounts))); ?>
   <?php } else { ?>
    <label for="micropub-me">Identity:</label>
-   <?php print_select('micropub-me', null, $accounts,
+   <?php print_select('micropub-me', $defaultAccount, $accountUrls,
      'dojoType="dijit.form.Select" size="1"', 'me'); ?>
    <br/>
   <?php } ?>

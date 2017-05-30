@@ -13,7 +13,12 @@
     <?php foreach ($accounts as $accurl => $account) { ?>
      <tr data-url="<?= htmlspecialchars($accurl) ?>">
       <td align='center'>
-       <input disabled='1' dojoType="dijit.form.CheckBox" type="checkbox"/>
+       <input type="radio" href="#" dojoType="dijit.form.RadioButton"
+              name="micropubDefaultIdentity"
+              value="<?= htmlspecialchars($accurl) ?>"
+              <?= $account['checked'] ?>
+              onchange='micropubMakeDefault(<?= json_encode($accurl) ?>, this)'
+          />
       </td>
       <td>
        <a href="<?= htmlspecialchars($accurl) ?>"><?= htmlspecialchars($accurl) ?></a>

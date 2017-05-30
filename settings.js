@@ -23,3 +23,29 @@ function micropubDeleteIdentity(accountUrl)
         }
     });
 }
+
+/**
+ * Mark account as the default account
+ */
+function micropubMakeDefault(accountUrl, checkbox)
+{
+    if (!checkbox.checked) {
+        return;
+    }
+
+    new Ajax.Request('backend.php', {
+        parameters: {
+            'op':     'pluginhandler',
+            'plugin': 'micropub',
+            'method': 'action',
+            'mode':   'setDefaultIdentity',
+            'me':     accountUrl,
+        },
+        onSuccess: function(transport) {
+            notify_info('Default account changed');
+        },
+        onFailure: function(transport) {
+            notify_error(transport.responseText);
+        }
+    });
+}
