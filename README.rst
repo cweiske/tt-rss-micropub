@@ -11,6 +11,29 @@ You can comment on the blog post and submit the reply to your blog without
 ever leaving TT-RSS.
 
 
+.. note:: The micropub plugin does currently not work in
+          "combined feed display mode".
+
+Screenshot: http://fotos.cweiske.de/screenshots/2017-05-30%20tt-rss%20micropub%20primetime.png
+
+=====
+Setup
+=====
+First install it into your tt-rss instance::
+
+    $ cd /path/to/tt-rss/plugins.local
+    $ git clone https://git.cweiske.de/tt-rss-micropub.git micropub
+
+Now enable the "micropub" plugin in the tt-rss preferences.
+
+After reloading the preferences, a new accordion "Micropub" will be available
+in the "Preferences" tab.
+Click on it, enter your homepage URL in "Add new identity" and click "Authorize".
+
+If at least one identity has been added, posts in tt-rss have a
+"Reply to this post" section at the bottom.
+
+
 =====================
 About tt-rss-micropub
 =====================
