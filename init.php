@@ -225,6 +225,9 @@ class Micropub extends Plugin implements IHandler
 
 
         $links = $this->getLinks($me);
+        if ($links === false) {
+            return $this->errorOut('Error fetching URL: ' . $me);
+        }
         if (!count($links)) {
             return $this->errorOut('No links found');
         }
@@ -325,6 +328,9 @@ class Micropub extends Plugin implements IHandler
         //step 1: micropub discovery
         $links = $this->getLinks($url);
 
+        if ($links === false) {
+            return $this->errorOut('Error fetching URL: ' . $url);
+        }
         if (!count($links)) {
             return $this->errorOut('No links found');
         }
@@ -365,6 +371,9 @@ class Micropub extends Plugin implements IHandler
         }
 
         $links = $this->getLinks($_GET['me']);
+        if ($links === false) {
+            return $this->errorOut('Error fetching URL: ' . $_GET['me']);
+        }
         if (!isset($links['token_endpoint'])) {
             return $this->errorOut('No token endpoint found');
         }
@@ -539,6 +548,10 @@ class Micropub extends Plugin implements IHandler
 
     /**
      * Extract link relations from a given URL
+     *
+     * @param string $url URL to extract links from
+     *
+     * @return bool|array Array of links, or false on HTTP error
      */
     protected function getLinks($url)
     {
@@ -548,6 +561,10 @@ class Micropub extends Plugin implements IHandler
                 'url' => $url,
             ]
         );
+        if ($html === false) {
+            return false;
+        }
+
         //Loading invalid HTML is tedious.
         // quick hack with regex. yay!
         preg_match_all('#<link[^>]+?>#', $html, $matches);
