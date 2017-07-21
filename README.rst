@@ -14,7 +14,7 @@ ever leaving TT-RSS.
 .. note:: The micropub plugin does currently not work in
           "combined feed display mode".
 
-Screenshot: http://fotos.cweiske.de/screenshots/2017-05-30%20tt-rss%20micropub%20primetime.png
+Screenshot: http://fotos.cweiske.de/screenshots/2017/2017-05-30%20tt-rss%20micropub%20primetime.png
 
 =====
 Setup
